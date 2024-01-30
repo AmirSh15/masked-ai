@@ -29,11 +29,20 @@ class Masker:
                     logging.info(f"Skipping mask {mask.__name__}")
                 continue
 
-            to_mask = mask.find(self.masked_data)
-            for i, item in enumerate(to_mask):
-                lookup_name = f"<{mask.__name__}_{i+1}>"
-                self._mask_lookup[lookup_name] = item
-                self.masked_data = self.masked_data.replace(item, lookup_name)
+            if mask.__name__ == "NERNamesMASK":
+                # instantiate the NERNamesMASK class
+                mask = mask()
+                to_mask = mask.find(self.masked_data)
+                for i, (name, item) in enumerate(to_mask):
+                    lookup_name = f"<{name}_{i+1}>"
+                    self._mask_lookup[lookup_name] = item
+                    self.masked_data = self.masked_data.replace(item, lookup_name)
+            else: 
+                to_mask = mask.find(self.masked_data)
+                for i, item in enumerate(to_mask):
+                    lookup_name = f"<{mask.__name__}_{i+1}>"
+                    self._mask_lookup[lookup_name] = item
+                    self.masked_data = self.masked_data.replace(item, lookup_name)
 
     def list_masks(self) -> list[str]:
         return [mask.__name__ for mask in MaskBase.__subclasses__()]

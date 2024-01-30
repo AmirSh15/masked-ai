@@ -87,3 +87,62 @@ class CreditCardMask(MaskBase):
     @staticmethod
     def find(data: str) -> List[Any]:
         return re.findall(r'\b(?:\d{4}-){3}\d{4}|\b\d{16}\b', data)
+    
+
+class NERNamesMASK(MaskBase):
+    """Named Entity Recognition using big NLP models
+    
+    """
+    def __init__(self, model='dslim/distilbert-NER', min_score=0.4):
+        from transformers import AutoTokenizer, AutoModelForTokenClassification
+        from transformers import pipeline
+
+        self.tokenizer = AutoTokenizer.from_pretrained(model)
+        self.model = AutoModelForTokenClassification.from_pretrained(model)
+        
+        self.nlp = pipeline("ner", model=self.model, tokenizer=self.tokenizer)
+        
+        self.__name__ = 'NERNamesMASK'
+        self.min_score = min_score
+        
+        # mapping of NER tags to their descriptions
+        if model == 'dslim/distilbert-NER':
+            self.tag2name = {
+                "LABEL_0": "O",       # Outside of a named entity
+                # "LABEL_1": "B-MISC",  # Beginning of a miscellaneous entity right after another miscellaneous entity
+                "LABEL_1": "MiscellMASK",  # Beginning of a miscellaneous entity right after another miscellaneous entity
+                # "LABEL_2": "I-MISC",  # Miscellaneous entity
+                "LABEL_2": "MiscellMASK",  # Miscellaneous entity
+                # "LABEL_3": "B-PER",   # Beginning of a person's name right after another person's name
+                "LABEL_3": "PersonMASK",   # Beginning of a person's name right after another person's name
+                # "LABEL_4": "I-PER",   # Person's name
+                "LABEL_4": "PersonMASK",   # Person's name
+                # "LABEL_5": "B-ORG",   # Beginning of an organisation right after another organisation
+                "LABEL_5": "OrgMASK",   # Beginning of an organisation right after another organisation
+                # "LABEL_6": "I-ORG",   # Organisation
+                "LABEL_6": "OrgMASK",   # Organisation
+                # "LABEL_7": "B-LOC",   # Beginning of a location right after another location
+                "LABEL_7": "LocationMASK",   # Beginning of a location right after another location
+                # "LABEL_8": "I-LOC",    # Location
+                "LABEL_8": "LocationMASK",    # Location
+            }
+        else:
+            raise NotImplementedError(f"Mapping for model {model} not implemented!")
+        
+    def find(self, data: str) -> List[Any]:
+        ner_results = self.nlp(data)
+        # only return the entities
+        selected_entities = [(entity['word'], self.tag2name[entity['entity']]) for entity in ner_results if (entity['entity'] == 'LABEL_3' or entity['entity'] == 'LABEL_5' or entity['entity'] == 'LABEL_6') and entity['score'] > self.min_score]
+        
+        # make sure the selected entities are a single word, not a subword --> check there is a space before and after
+        new_selected_entities = []
+        for (entity, label) in selected_entities:
+            start, end = data.find(entity), data.find(entity) + len(entity)
+            if data[start-1] != ' ' or data[end] != ' ' or '#' in entity:
+                continue
+            new_selected_entities.append((label, entity))
+            
+        # remove duplicates
+        new_selected_entities = list(set(new_selected_entities))
+                
+        return new_selected_entities
