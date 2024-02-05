@@ -2,7 +2,7 @@
 """
 import sys
 import logging
-from typing import Optional
+from typing import Optional, List
 import argparse
 import subprocess
 
@@ -15,7 +15,7 @@ class Masker:
     def __init__(
         self,
         data: str,
-        skip: Optional[list] = None,
+        skip: Optional[List] = None,
         debug: bool = False
     ) -> None:
         """
@@ -44,7 +44,7 @@ class Masker:
                     self._mask_lookup[lookup_name] = item
                     self.masked_data = self.masked_data.replace(item, lookup_name)
 
-    def list_masks(self) -> list[str]:
+    def list_masks(self) -> List[str]:
         return [mask.__name__ for mask in MaskBase.__subclasses__()]
 
     def get_lookup(self) -> dict:
