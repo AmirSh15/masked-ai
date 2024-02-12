@@ -11,6 +11,39 @@ nltk.download('averaged_perceptron_tagger', quiet=True)
 nltk.download('maxent_ne_chunker', quiet=True)
 nltk.download('words', quiet=True)
 
+__allowed_names__ = [
+    "NetAct",
+    "cell",
+    "support",
+    "backup",
+    "restore",
+    "case",
+    "Java",
+    "basic",
+    "issue",
+    "Once",
+    "feature",
+    "enabled",
+    "helpful",
+    "failure",
+    "set",
+    "resolved",
+    "button",
+    "monitor",
+    "follow",
+    "up",
+    "PM",
+    "CM",
+    "FM",
+]
+__extensions__ =[
+    "exe",
+    "yml",
+    "com",
+    "sh",
+]
+__punctuation__ = ".,;:'"
+
 
 class MaskBase(ABC):
     """Abstract class, how to implement new mask
@@ -34,6 +67,23 @@ class IPMask(MaskBase):
     @staticmethod
     def find(data: str) -> List[Any]:
         return re.findall(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b", data)
+    
+class NETParMask(MaskBase):
+    """Network parameters
+    """
+    @staticmethod
+    def find(data: str) -> List[Any]:
+        candidates = re.findall(r"(\w+(?:\.\w+)+)", data)
+        # make sure the last part is not an extension
+        new_candidates = []
+        for x in candidates:
+            if any([x.split('.')[-1].lower() in k.lower() for k in __extensions__]):
+                continue
+            new_candidates.append(x)
+        
+        new_candidates = list(set(new_candidates))
+        
+        return new_candidates
 
 
 class NamesMask(MaskBase):
@@ -54,7 +104,33 @@ class NamesMask(MaskBase):
                 person_list.append(name[:-1])
             name = ''
             person = []
-        return person_list
+            
+        # if there is a picked word that has multiple names in it, add each individual to the person_list
+        new_person_list = person_list
+        for name in person_list: 
+            start, end = data.find(name), data.find(name) + len(name)   
+            if len(name.split(' ')) > 1 and data[start-1] != '''"''' and data[end] != '''"''':
+                new_person_list.extend(name.split(' '))
+        person_list = new_person_list
+            
+        # make sure the person's name is a single word and doesn not have " in the begining of end of it
+        new_person_list = []
+        for name in person_list:
+            start, end = data.find(name), data.find(name) + len(name)
+            # make sure the entity is not in the allowed_names. also avoid names here with all capital letters
+            if len(name.split(' ') ) > 1 or \
+                data[start-1] == '''"''' or data[end] == '''"''' or \
+                any([name.lower() == x.lower() for x in __allowed_names__]) or \
+                data[start-1] != ' ' or \
+                (data[end] != ' ' and data[end] not in __punctuation__) or \
+                name.isupper() or \
+                len(name) == 1:
+                continue
+            new_person_list.append(name)
+            
+        new_person_list = list(set(new_person_list))
+        
+        return new_person_list
 
 
 class LinkMask(MaskBase):
@@ -64,13 +140,35 @@ class LinkMask(MaskBase):
     def find(data: str) -> List[Any]:
         return re.findall(r'(?i)((?:https?://|www\d{0,3}[.])?[a-z0-9.\-]+[.](?:(?:international)|(?:construction)|(?:contractors)|(?:enterprises)|(?:photography)|(?:immobilien)|(?:management)|(?:technology)|(?:directory)|(?:education)|(?:equipment)|(?:institute)|(?:marketing)|(?:solutions)|(?:builders)|(?:clothing)|(?:computer)|(?:democrat)|(?:diamonds)|(?:graphics)|(?:holdings)|(?:lighting)|(?:plumbing)|(?:training)|(?:ventures)|(?:academy)|(?:careers)|(?:company)|(?:domains)|(?:florist)|(?:gallery)|(?:guitars)|(?:holiday)|(?:kitchen)|(?:recipes)|(?:shiksha)|(?:singles)|(?:support)|(?:systems)|(?:agency)|(?:berlin)|(?:camera)|(?:center)|(?:coffee)|(?:estate)|(?:kaufen)|(?:luxury)|(?:monash)|(?:museum)|(?:photos)|(?:repair)|(?:social)|(?:tattoo)|(?:travel)|(?:viajes)|(?:voyage)|(?:build)|(?:cheap)|(?:codes)|(?:dance)|(?:email)|(?:glass)|(?:house)|(?:ninja)|(?:photo)|(?:shoes)|(?:solar)|(?:today)|(?:aero)|(?:arpa)|(?:asia)|(?:bike)|(?:buzz)|(?:camp)|(?:club)|(?:coop)|(?:farm)|(?:gift)|(?:guru)|(?:info)|(?:jobs)|(?:kiwi)|(?:land)|(?:limo)|(?:link)|(?:menu)|(?:mobi)|(?:moda)|(?:name)|(?:pics)|(?:pink)|(?:post)|(?:rich)|(?:ruhr)|(?:sexy)|(?:tips)|(?:wang)|(?:wien)|(?:zone)|(?:biz)|(?:cab)|(?:cat)|(?:ceo)|(?:com)|(?:edu)|(?:gov)|(?:int)|(?:mil)|(?:net)|(?:onl)|(?:org)|(?:pro)|(?:red)|(?:tel)|(?:uno)|(?:xxx)|(?:ac)|(?:ad)|(?:ae)|(?:af)|(?:ag)|(?:ai)|(?:al)|(?:am)|(?:an)|(?:ao)|(?:aq)|(?:ar)|(?:as)|(?:at)|(?:au)|(?:aw)|(?:ax)|(?:az)|(?:ba)|(?:bb)|(?:bd)|(?:be)|(?:bf)|(?:bg)|(?:bh)|(?:bi)|(?:bj)|(?:bm)|(?:bn)|(?:bo)|(?:br)|(?:bs)|(?:bt)|(?:bv)|(?:bw)|(?:by)|(?:bz)|(?:ca)|(?:cc)|(?:cd)|(?:cf)|(?:cg)|(?:ch)|(?:ci)|(?:ck)|(?:cl)|(?:cm)|(?:cn)|(?:co)|(?:cr)|(?:cu)|(?:cv)|(?:cw)|(?:cx)|(?:cy)|(?:cz)|(?:de)|(?:dj)|(?:dk)|(?:dm)|(?:do)|(?:dz)|(?:ec)|(?:ee)|(?:eg)|(?:er)|(?:es)|(?:et)|(?:eu)|(?:fi)|(?:fj)|(?:fk)|(?:fm)|(?:fo)|(?:fr)|(?:ga)|(?:gb)|(?:gd)|(?:ge)|(?:gf)|(?:gg)|(?:gh)|(?:gi)|(?:gl)|(?:gm)|(?:gn)|(?:gp)|(?:gq)|(?:gr)|(?:gs)|(?:gt)|(?:gu)|(?:gw)|(?:gy)|(?:hk)|(?:hm)|(?:hn)|(?:hr)|(?:ht)|(?:hu)|(?:id)|(?:ie)|(?:il)|(?:im)|(?:in)|(?:io)|(?:iq)|(?:ir)|(?:is)|(?:it)|(?:je)|(?:jm)|(?:jo)|(?:jp)|(?:ke)|(?:kg)|(?:kh)|(?:ki)|(?:km)|(?:kn)|(?:kp)|(?:kr)|(?:kw)|(?:ky)|(?:kz)|(?:la)|(?:lb)|(?:lc)|(?:li)|(?:lk)|(?:lr)|(?:ls)|(?:lt)|(?:lu)|(?:lv)|(?:ly)|(?:ma)|(?:mc)|(?:md)|(?:me)|(?:mg)|(?:mh)|(?:mk)|(?:ml)|(?:mm)|(?:mn)|(?:mo)|(?:mp)|(?:mq)|(?:mr)|(?:ms)|(?:mt)|(?:mu)|(?:mv)|(?:mw)|(?:mx)|(?:my)|(?:mz)|(?:na)|(?:nc)|(?:ne)|(?:nf)|(?:ng)|(?:ni)|(?:nl)|(?:no)|(?:np)|(?:nr)|(?:nu)|(?:nz)|(?:om)|(?:pa)|(?:pe)|(?:pf)|(?:pg)|(?:ph)|(?:pk)|(?:pl)|(?:pm)|(?:pn)|(?:pr)|(?:ps)|(?:pt)|(?:pw)|(?:py)|(?:qa)|(?:re)|(?:ro)|(?:rs)|(?:ru)|(?:rw)|(?:sa)|(?:sb)|(?:sc)|(?:sd)|(?:se)|(?:sg)|(?:sh)|(?:si)|(?:sj)|(?:sk)|(?:sl)|(?:sm)|(?:sn)|(?:so)|(?:sr)|(?:st)|(?:su)|(?:sv)|(?:sx)|(?:sy)|(?:sz)|(?:tc)|(?:td)|(?:tf)|(?:tg)|(?:th)|(?:tj)|(?:tk)|(?:tl)|(?:tm)|(?:tn)|(?:to)|(?:tp)|(?:tr)|(?:tt)|(?:tv)|(?:tw)|(?:tz)|(?:ua)|(?:ug)|(?:uk)|(?:us)|(?:uy)|(?:uz)|(?:va)|(?:vc)|(?:ve)|(?:vg)|(?:vi)|(?:vn)|(?:vu)|(?:wf)|(?:ws)|(?:ye)|(?:yt)|(?:za)|(?:zm)|(?:zw))(?:/[^\s()<>]+[^\s`!()\[\]{};:\'".,<>?\xab\xbb\u201c\u201d\u2018\u2019])?)', data)
 
+class SerialNumMask(MaskBase):
+    """Serial numbers (duplicate of PhoneMask)
+    """
+    @staticmethod
+    def find(data: str) -> List[Any]:
+        candidate = re.findall(r'''((?:(?<![\d-])(?:\+?\d{1,3}[-.\s*]?)?(?:\(?\d{3}\)?[-.\s*]?)?\d{3}[-.\s*]?\d{4}(?![\d-]))|(?:(?<![\d-])(?:(?:\(\+?\d{2}\))|(?:\+?\d{2}))\s*\d{2}\s*\d{3}\s*\d{4}(?![\d-])))''', data)
+        # make sure that before and after there is a space
+        new_candidate = []
+        for x in candidate:
+            start, end = data.find(x), data.find(x) + len(x)
+            if data[start-1] != ' ' or data[end] != ' ':
+                continue
+            new_candidate.append(x)
+        return new_candidate
 
 class PhoneMask(MaskBase):
     """Phone numbers
     """
     @staticmethod
     def find(data: str) -> List[Any]:
-        return re.findall(r'''((?:(?<![\d-])(?:\+?\d{1,3}[-.\s*]?)?(?:\(?\d{3}\)?[-.\s*]?)?\d{3}[-.\s*]?\d{4}(?![\d-]))|(?:(?<![\d-])(?:(?:\(\+?\d{2}\))|(?:\+?\d{2}))\s*\d{2}\s*\d{3}\s*\d{4}(?![\d-])))''', data)
+        candidate = re.findall(r'''((?:(?<![\d-])(?:\+?\d{1,3}[-.\s*]?)?(?:\(?\d{3}\)?[-.\s*]?)?\d{3}[-.\s*]?\d{4}(?![\d-]))|(?:(?<![\d-])(?:(?:\(\+?\d{2}\))|(?:\+?\d{2}))\s*\d{2}\s*\d{3}\s*\d{4}(?![\d-])))''', data)
+        # make sure that before and after there is a space
+        new_candidate = []
+        for x in candidate:
+            start, end = data.find(x), data.find(x) + len(x)
+            if data[start-1] != ' ' or data[end] != ' ':
+                continue
+            new_candidate.append(x)
+        return new_candidate
 
 
 class EmailMask(MaskBase):
@@ -93,7 +191,7 @@ class NERNamesMASK(MaskBase):
     """Named Entity Recognition using big NLP models
     
     """
-    def __init__(self, model='dslim/distilbert-NER', min_score=0.4):
+    def __init__(self, model='dslim/distilbert-NER', min_score=0.5):
         from transformers import AutoTokenizer, AutoModelForTokenClassification
         from transformers import pipeline
 
@@ -138,7 +236,12 @@ class NERNamesMASK(MaskBase):
         new_selected_entities = []
         for (entity, label) in selected_entities:
             start, end = data.find(entity), data.find(entity) + len(entity)
-            if data[start-1] != ' ' or data[end] != ' ' or '#' in entity:
+            # make sure the entity is not in the allowed_names
+            if data[start-1] != ' ' or \
+                (data[end] != ' ' and data[end] not in __punctuation__) or \
+                len(entity) == 1 or \
+                '#' in entity or \
+                any([entity.lower() == x.lower() for x in __allowed_names__]):
                 continue
             new_selected_entities.append((label, entity))
             
