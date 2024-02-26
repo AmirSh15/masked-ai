@@ -238,6 +238,25 @@ __allowed_names__ += [
     "rollout",
     "oriented",
     "sharing",
+    "thresholds",
+    "firmware",
+    "backed",
+    "shared",
+    "initializing",
+    "outages",
+    "handovers",
+    "requests",
+    "screenshot",
+    "improved",
+    "runtime",
+    "allocation",
+    "channels",
+    "workorder",
+    "delayed",
+    "dropped",
+    "aggregated",
+    "configurations",
+    "jira",
 ]
 __extensions__ =[
     "exe",
@@ -334,6 +353,7 @@ class NamesMask(MaskBase):
                 name.isupper() or \
                 len([x for x in name if x.isdigit()]) > 1 or \
                 "_" in name or \
+                "/" in name or \
                 len(name) == 1:
                 continue
             new_person_list.append(name)
