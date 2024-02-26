@@ -6,6 +6,8 @@ from typing import Optional, List
 import argparse
 import subprocess
 
+import torch
+
 from masked_ai.core.masks import MaskBase
 
 
@@ -16,7 +18,8 @@ class Masker:
         self,
         data: str,
         skip: Optional[List] = None,
-        debug: bool = False
+        debug: bool = False,
+        pipel: Optional[torch.nn.Module] = None,
     ) -> None:
         """
         """
@@ -31,7 +34,7 @@ class Masker:
 
             if mask.__name__ == "NERNamesMASK":
                 # instantiate the NERNamesMASK class
-                mask = mask()
+                mask = mask(pipel=pipel)
                 to_mask = mask.find(self.masked_data)
                 for i, (name, item) in enumerate(to_mask):
                     lookup_name = f"<{name}_{i+1}>"
