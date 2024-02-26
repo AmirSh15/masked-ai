@@ -4,6 +4,8 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any, List
 
+from english_words import get_english_words_set
+
 import nltk
 
 nltk.download('punkt', quiet=True)
@@ -87,7 +89,9 @@ __allowed_names__ = [
     "correction",
     "top",
     "reference",
+    "capture",
 ]
+__allowed_names__ = list(get_english_words_set(['web2'], lower=True))
 __extensions__ =[
     "exe",
     "yml",
