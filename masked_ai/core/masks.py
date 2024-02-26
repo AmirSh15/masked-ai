@@ -125,6 +125,119 @@ __allowed_names__ += [
     "values",
     "failures",
     "email",
+    "errors",
+    "syslog",
+    "snapshots",
+    "modules",
+    "msg",
+    "algo",
+    "networks",
+    "support",
+    "cleared",
+    "ip",
+    "online",
+    "markets",
+    "Reestablishment",
+    "pls",
+    "jan",
+    "feb",
+    "mar",
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct",
+    "nov",
+    "dec",
+    "timezone",
+    "managed",
+    "calls",
+    "files",
+    "units",
+    "apears",
+    "sites",
+    "handover",
+    "needed",
+    "Reconfiguration",
+    "blocks",
+    "detected",
+    "Exceeded",
+    "Traafic",
+    "newer",
+    "requested",
+    "answered",
+    "freq",
+    "hours",
+    "traces",
+    "measurements",
+    "rejects",
+    "avg",
+    "waveform",
+    "roots",
+    "groups",
+    "cables",
+    "segments",
+    "intra",
+    "fourier",
+    "earlier",
+    "configurations"
+    "Served",
+    "multi",
+    "ids",
+    "completed",
+    "acustic",
+    "specifications",
+    "expired",
+    "muted",
+    "drops",
+    "proactive",
+    "scheduling",
+    "looks",
+    "findings",
+    "observed",
+    "improvements",
+    "workflow",
+    "enabling",
+    "subnet",
+    "embedded",
+    "regards",
+    "problems",
+    "dependencies",
+    "preambles",
+    "optimized",
+    "mutes",
+    "discarded",
+    "neighbour",
+    "affirmed",
+    "guaranteed",
+    "customized",
+    "stats",
+    "availabilty",
+    "counters",
+    "reached",
+    "ipv4",
+    "ipv6",
+    "levels",
+    "ports",
+    "resources",
+    "cpu",
+    "transmitted",
+    "app",
+    "configuring",
+    "optimizer",
+    "relations",
+    "radios",
+    "packets",
+    "ethernet",
+    "codec",
+    "offline",
+    "standalone",
+    "bandwidth",
+    "rollout",
+    "oriented",
+    "sharing",
 ]
 __extensions__ =[
     "exe",
@@ -200,7 +313,9 @@ class NamesMask(MaskBase):
         new_person_list = person_list
         for name in person_list: 
             start, end = data.find(name), data.find(name) + len(name)   
-            if len(name.split(' ')) > 1 and data[start-1] != '''"''' and data[end] != '''"''':
+            start = max(0, start)
+            end = min(len(data), end)
+            if len(name.split(' ')) > 1 and data[max(0, start - 1)] != '''"''' and data[end] != '''"''':
                 new_person_list.extend(name.split(' '))
         person_list = new_person_list
             
@@ -208,14 +323,17 @@ class NamesMask(MaskBase):
         new_person_list = []
         for name in person_list:
             start, end = data.find(name), data.find(name) + len(name)
+            start = max(0, start)
+            end = min(len(data), end)
             # make sure the entity is not in the allowed_names. also avoid names here with all capital letters
             if len(name.split(' ') ) > 1 or \
-                data[start-1] == '''"''' or data[end] == '''"''' or \
+                data[max(0, start - 1)] == '''"''' or data[end] == '''"''' or \
                 any([name.lower() == x.lower() for x in __allowed_names__]) or \
-                data[start-1] != ' ' or \
+                data[max(0, start - 1)] != ' ' or \
                 (data[end] != ' ' and data[end] not in __punctuation__) or \
                 name.isupper() or \
                 len([x for x in name if x.isdigit()]) > 1 or \
+                "_" in name or \
                 len(name) == 1:
                 continue
             new_person_list.append(name)
@@ -242,7 +360,9 @@ class SerialNumMask(MaskBase):
         new_candidate = []
         for x in candidate:
             start, end = data.find(x), data.find(x) + len(x)
-            if data[start-1] != ' ' or data[end] != ' ':
+            start = max(0, start)
+            end = min(len(data), end)
+            if data[max(0, start - 1)] != ' ' or data[end] != ' ':
                 continue
             new_candidate.append(x)
         return new_candidate
@@ -257,7 +377,9 @@ class PhoneMask(MaskBase):
         new_candidate = []
         for x in candidate:
             start, end = data.find(x), data.find(x) + len(x)
-            if data[start-1] != ' ' or data[end] != ' ':
+            start = max(0, start)
+            end = min(len(data), end)
+            if data[max(0, start - 1)] != ' ' or data[end] != ' ':
                 continue
             new_candidate.append(x)
         return new_candidate
@@ -283,20 +405,24 @@ class NERNamesMASK(MaskBase):
     """Named Entity Recognition using big NLP models
     
     """
-    def __init__(self, model='dslim/distilbert-NER', min_score=0.5):
-        from transformers import AutoTokenizer, AutoModelForTokenClassification
-        from transformers import pipeline
+    def __init__(self, model_name='dslim/distilbert-NER', pipel=None, min_score=0.5):
+        if pipel is None:
+            from transformers import AutoTokenizer, AutoModelForTokenClassification
+            from transformers import pipeline
 
-        self.tokenizer = AutoTokenizer.from_pretrained(model)
-        self.model = AutoModelForTokenClassification.from_pretrained(model)
+            self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+            self.model = AutoModelForTokenClassification.from_pretrained(model_name)
+            self.nlp = pipeline("ner", model=self.model, tokenizer=self.tokenizer)
+        else:
+            self.nlp = pipel
         
-        self.nlp = pipeline("ner", model=self.model, tokenizer=self.tokenizer)
+        
         
         self.__name__ = 'NERNamesMASK'
         self.min_score = min_score
         
         # mapping of NER tags to their descriptions
-        if model == 'dslim/distilbert-NER':
+        if model_name == 'dslim/distilbert-NER':
             self.tag2name = {
                 "LABEL_0": "O",       # Outside of a named entity
                 # "LABEL_1": "B-MISC",  # Beginning of a miscellaneous entity right after another miscellaneous entity
@@ -328,8 +454,10 @@ class NERNamesMASK(MaskBase):
         new_selected_entities = []
         for (entity, label) in selected_entities:
             start, end = data.find(entity), data.find(entity) + len(entity)
+            start = max(0, start)
+            end = min(len(data), end)
             # make sure the entity is not in the allowed_names
-            if data[start-1] != ' ' or \
+            if data[max(0, start - 1)] != ' ' or \
                 (data[end] != ' ' and data[end] not in __punctuation__) or \
                 len(entity) == 1 or \
                 '#' in entity or \
