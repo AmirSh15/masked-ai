@@ -13,7 +13,8 @@ nltk.download('averaged_perceptron_tagger', quiet=True)
 nltk.download('maxent_ne_chunker', quiet=True)
 nltk.download('words', quiet=True)
 
-__allowed_names__ = [
+__allowed_names__ = list(get_english_words_set(['web2'], lower=True))
+__allowed_names__ += [
     "NetAct",
     "cell",
     "support",
@@ -91,7 +92,6 @@ __allowed_names__ = [
     "reference",
     "capture",
 ]
-__allowed_names__ = list(get_english_words_set(['web2'], lower=True))
 __extensions__ =[
     "exe",
     "yml",
