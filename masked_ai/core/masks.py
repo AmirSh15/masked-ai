@@ -85,12 +85,22 @@ __allowed_names__ += [
     "clear",
     "power",
     "setting",
+    "settings",
     "confirm",
     "fix",
     "correction",
     "top",
     "reference",
     "capture",
+    "debug",
+    "rf",
+    "recovered",
+    "cells",
+    "logs",
+    "log",
+    "seconds",
+    "antennas",
+    
 ]
 __extensions__ =[
     "exe",
@@ -181,6 +191,7 @@ class NamesMask(MaskBase):
                 data[start-1] != ' ' or \
                 (data[end] != ' ' and data[end] not in __punctuation__) or \
                 name.isupper() or \
+                len([x for x in name if x.isdigit()]) > 1 or \
                 len(name) == 1:
                 continue
             new_person_list.append(name)
