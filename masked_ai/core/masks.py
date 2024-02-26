@@ -35,6 +35,19 @@ __allowed_names__ = [
     "PM",
     "CM",
     "FM",
+    "need",
+    "node",
+    "startup",
+    "dump",
+    "site",
+    "check",
+    "checked",
+    "serial",
+    "sleep",
+    "silent",
+    "config",
+    "change",
+    "changes",
 ]
 __extensions__ =[
     "exe",
@@ -68,22 +81,23 @@ class IPMask(MaskBase):
     def find(data: str) -> List[Any]:
         return re.findall(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b", data)
     
-class NETParMask(MaskBase):
-    """Network parameters
-    """
-    @staticmethod
-    def find(data: str) -> List[Any]:
-        candidates = re.findall(r"(\w+(?:\.\w+)+)", data)
-        # make sure the last part is not an extension
-        new_candidates = []
-        for x in candidates:
-            if any([x.split('.')[-1].lower() in k.lower() for k in __extensions__]):
-                continue
-            new_candidates.append(x)
+## skip for the time being
+# class NETParMask(MaskBase):
+#     """Network parameters
+#     """
+#     @staticmethod
+#     def find(data: str) -> List[Any]:
+#         candidates = re.findall(r"(\w+(?:\.\w+)+)", data)
+#         # make sure the last part is not an extension
+#         new_candidates = []
+#         for x in candidates:
+#             if any([x.split('.')[-1].lower() in k.lower() for k in __extensions__]):
+#                 continue
+#             new_candidates.append(x)
         
-        new_candidates = list(set(new_candidates))
+#         new_candidates = list(set(new_candidates))
         
-        return new_candidates
+#         return new_candidates
 
 
 class NamesMask(MaskBase):
