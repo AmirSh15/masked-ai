@@ -7,13 +7,9 @@ this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
 
-RELEASE_VERSION = os.environ.get('RELEASE_VERSION', None)
-
-print(f'Building version: {RELEASE_VERSION}')
-
 setup(
     name='masked_ai',
-    version=RELEASE_VERSION,
+    version="0.0.1",
     description='Masked AI',
     long_description=long_description,
     long_description_content_type='text/markdown',
