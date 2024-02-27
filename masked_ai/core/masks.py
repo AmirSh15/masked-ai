@@ -382,7 +382,8 @@ class SerialNumMask(MaskBase):
             start, end = data.find(x), data.find(x) + len(x)
             start = max(0, start)
             end = min(len(data), end)
-            if data[max(0, start - 1)] != ' ' or data[end] != ' ':
+            # if data[max(0, start - 1)] != ' ' or data[end] != ' ':
+            if data[max(0, start - 1)] != ' ':
                 continue
             new_candidate.append(x)
         return new_candidate
