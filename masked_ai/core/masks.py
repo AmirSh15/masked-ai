@@ -333,7 +333,7 @@ class NamesMask(MaskBase):
         for name in person_list: 
             start, end = data.find(name), data.find(name) + len(name)   
             start = max(0, start)
-            end = min(len(data), end)
+            end = min(len(data) - 1, end)
             if len(name.split(' ')) > 1 and data[max(0, start - 1)] != '''"''' and data[end] != '''"''':
                 new_person_list.extend(name.split(' '))
         person_list = new_person_list
@@ -343,7 +343,7 @@ class NamesMask(MaskBase):
         for name in person_list:
             start, end = data.find(name), data.find(name) + len(name)
             start = max(0, start)
-            end = min(len(data), end)
+            end = min(len(data) - 1, end)
             # make sure the entity is not in the allowed_names. also avoid names here with all capital letters
             if len(name.split(' ') ) > 1 or \
                 data[max(0, start - 1)] == '''"''' or data[end] == '''"''' or \
@@ -381,9 +381,8 @@ class SerialNumMask(MaskBase):
         for x in candidate:
             start, end = data.find(x), data.find(x) + len(x)
             start = max(0, start)
-            end = min(len(data), end)
-            # if data[max(0, start - 1)] != ' ' or data[end] != ' ':
-            if data[max(0, start - 1)] != ' ':
+            end = min(len(data) - 1, end)
+            if data[max(0, start - 1)] != ' ' or data[end] != ' ':
                 continue
             new_candidate.append(x)
         return new_candidate
@@ -399,7 +398,7 @@ class PhoneMask(MaskBase):
         for x in candidate:
             start, end = data.find(x), data.find(x) + len(x)
             start = max(0, start)
-            end = min(len(data), end)
+            end = min(len(data) - 1, end)
             if data[max(0, start - 1)] != ' ' or data[end] != ' ':
                 continue
             new_candidate.append(x)
@@ -476,7 +475,7 @@ class NERNamesMASK(MaskBase):
         for (entity, label) in selected_entities:
             start, end = data.find(entity), data.find(entity) + len(entity)
             start = max(0, start)
-            end = min(len(data), end)
+            end = min(len(data) - 1, end)
             # make sure the entity is not in the allowed_names
             if data[max(0, start - 1)] != ' ' or \
                 (data[end] != ' ' and data[end] not in __punctuation__) or \
