@@ -257,6 +257,7 @@ __allowed_names__ += [
     "aggregated",
     "configurations",
     "jira",
+    "labels",
 ]
 __extensions__ =[
     "exe",
